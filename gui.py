@@ -35,14 +35,17 @@ class Gui :
         self.df = pd.read_csv("laptop_data.csv")
         
         # What information we needed for prediction. 
-        self.info = {"op_sys" : "", "type_name" : "", "brand" : "", "cpu" : "", "gpu" : "", "touch_screen" : False, "weight" : 0, "ips" : False, "cpu_frequency" : 0, 'screen_width' : 0, 'screen_heigth' : 0, 'inches' : 0, "ssd" : 0, "ram" : 0}
+        self.info = {"op_sys" : "", "type_name" : "", "brand" : "", "cpu" : "", "gpu" : "", "touch_screen" : False, "weight" : 0, "ips" : False, "cpu_frequency" : 0, 'screen_width' : 0, 'screen_heigth' : 0, 'inches' : 0, "ssd" : 0, "ram" : 0, "price" : 0}
+        
+        self.laptop = []
+        self.num = 1
 
 
         
     def get_data(self) :
         """Getting data from user."""
         
-        self.create_label(f"LAPTOP DATA", "Times 14")
+        self.create_label(f"LAPTOP {self.num}", "Times 14")
         
         # Brand.
         self.brand = self.create_combobox("Brand", list(self.df["Company"].unique()))
@@ -86,7 +89,14 @@ class Gui :
         # Ram.
         self.ram = self.create_text_area("Ram (in GB)")
         
-        self.submit_button()
+        # Price
+        self.price = self.create_text_area("Price (in Rs)")
+        
+        # Choose which button we want to use.
+        if self.num < 2 :
+            self.next_button()
+        else :
+            self.submit_button()
         
 
         
@@ -104,6 +114,14 @@ class Gui :
         radio_button1.pack()
         radio_button2.pack()
         return option_var
+
+
+
+    def next_button(self) :
+        """Create button and map with its command."""
+        
+        self.next_b = tk.Button(self.root, text="next", command=self.next)
+        self.next_b.pack()
 
 
 
@@ -141,6 +159,21 @@ class Gui :
         return text_area
 
 
+
+    def next(self) :
+        """Next laptop information command."""
+        
+        # Save data.
+        self.save()
+        
+        # Clear screen.
+        self.clear()
+        
+        # goto next laptop information section.
+        self.num += 1
+        my_gui.get_data()
+
+
         
     def pridictor(self) :
         """Next pridictor command."""
@@ -153,9 +186,10 @@ class Gui :
         
         # Pridict data with given information.
         self.pridict_data()
+        min_percentage_index = self.compare_max()
         
         # Show max profit laptop on given choices.
-        self.show()
+        self.show(min_percentage_index)
         self.root.bind("<Return>", self.thanks)
         
         
@@ -168,15 +202,20 @@ class Gui :
         self.predict.data_clean()
         self.predict.train_data()
         
-        pridicted_price = self.predict.predict(self.info)
-        self.info.update({"pridicted_price" : pridicted_price})
+        laptop = []
+        for info in self.laptop :
+            pridicted_price = self.predict.predict(info)
+            profit_percentage = ((pridicted_price-info["price"])/pridicted_price)* 100 / info["price"]
+            info.update({"pridicted_price" : pridicted_price, "profit_percentage" : profit_percentage})
+            laptop.append(info)
+        self.laptop = laptop
         
         
         
-    def show(self) :
+    def show(self, print_index) :
         """Show the given index laptop information."""
         
-        for info_key, info_value in self.info.items() :
+        for info_key, info_value in self.laptop[print_index].items() :
             self.create_label(f"{info_key} - {info_value}", "Times 25")
         
         
@@ -224,6 +263,8 @@ class Gui :
         self.info["ssd"] = float(self.ssd.get('1.0', tk.END))
         self.info["ram"] = float(self.ram.get('1.0', tk.END))
         self.info["inches"] = float(self.inches.get('1.0', tk.END))
+        self.info["price"] = float(self.price.get('1.0', tk.END))
+        self.laptop.append(self.info)
         
         
         
